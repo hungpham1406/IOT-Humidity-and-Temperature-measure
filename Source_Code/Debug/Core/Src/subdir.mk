@@ -5,6 +5,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../Core/Src/DHT11.c \
 ../Core/Src/LiquidCrystal.c \
 ../Core/Src/main.c \
 ../Core/Src/software_timer.c \
@@ -15,6 +16,7 @@ C_SRCS += \
 ../Core/Src/system_stm32f4xx.c 
 
 OBJS += \
+./Core/Src/DHT11.o \
 ./Core/Src/LiquidCrystal.o \
 ./Core/Src/main.o \
 ./Core/Src/software_timer.o \
@@ -25,6 +27,7 @@ OBJS += \
 ./Core/Src/system_stm32f4xx.o 
 
 C_DEPS += \
+./Core/Src/DHT11.d \
 ./Core/Src/LiquidCrystal.d \
 ./Core/Src/main.d \
 ./Core/Src/software_timer.d \
