@@ -94,11 +94,7 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim2);
   LiquidCrystal(GPIOD, GPIO_PIN_8, GPIO_PIN_9, GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14);
   begin(16, 2);
-  home();
-  clear();
   print("Hello World!");
-//  int i = 0;
-//  char* str;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -110,7 +106,6 @@ int main(void)
 		  setTimer1(100);
 		  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
 	  }
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
