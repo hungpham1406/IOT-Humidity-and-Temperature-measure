@@ -65,7 +65,7 @@ main-build: Humidity_and_Temperature_measure.elf secondary-outputs
 
 # Tool invocations
 Humidity_and_Temperature_measure.elf: $(OBJS) $(USER_OBJS) C:\GIT_Personal\IOT-Humidity-and-Temperature-measure\Source_Code\STM32F407VGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Humidity_and_Temperature_measure.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\GIT_Personal\IOT-Humidity-and-Temperature-measure\Source_Code\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Humidity_and_Temperature_measure.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "Humidity_and_Temperature_measure.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\GIT_Personal\IOT-Humidity-and-Temperature-measure\Source_Code\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Humidity_and_Temperature_measure.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

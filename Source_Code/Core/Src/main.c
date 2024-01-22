@@ -59,17 +59,18 @@ static void MX_TIM2_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 void delay(uint16_t time) {
-	_HAL_TIM_SET_COUNTER(&htim2, 0);
-
+	__HAL_TIM_SET_COUNTER(&htim2, 0);
+	while((__HAL_TIM_GET_COUNTER(&htim2)) < time);
 }
 
 uint8_t RH_byte1, RH_byte2, Temp_byte1, Temp_byte2;
 uint16_t SUM, RH, TEMP;
 
-float Temperature = 0, Humidity = 0;
+float Temperature = 0;
+float Humidity = 0;
 uint8_t presence = 0;
 
-void Set_Pin_Output(GPIO_Typedef *GPIOx, uint16_t GPIO_Pin) {
+void Set_Pin_Output(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 	GPIO_InitStruct.Pin = GPIO_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -77,7 +78,7 @@ void Set_Pin_Output(GPIO_Typedef *GPIOx, uint16_t GPIO_Pin) {
 	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
 }
 
-void Set_Pin_Input(GPIO_Typedef *GPIOx, uint16_t GPIO_Pin) {
+void Set_Pin_Input(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 	GPIO_InitStruct.Pin = GPIO_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
@@ -85,25 +86,59 @@ void Set_Pin_Input(GPIO_Typedef *GPIOx, uint16_t GPIO_Pin) {
 	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
 }
 
+void display_Temp(float Temp) {
+	char str[30];
+	setCursor(0, 0);
+	print("Temp: ");
+	sprintf(str, "%.1f", Temperature);
+	print(str);
+}
+
+void display_Humid(float RH) {
+	char str[30];
+	setCursor(0, 1);
+	print("Humidity: ");
+	sprintf(str, "%.1f", RH);
+	print(str);
+}
+
 /********************************DHT11 FUNCTIONS**********************************/
 #define DHT11_PORT GPIOA
-#define DHT11_PIN GPIO_PIN_1
-int DHT11_Start_flag = 1;
+#define DHT11_PIN GPIO_PIN_2
 
 void DHT11_Start(void) {
 	Set_Pin_Output(DHT11_PORT, DHT11_PIN);			//Set the pin as output
 	HAL_GPIO_WritePin(DHT11_PORT, DHT11_PIN, 0);	//Pull the pin low
-
+	delay(18000);	//Wait for 18ms
 	HAL_GPIO_WritePin(DHT11_PORT, DHT11_PIN, 1);
+	delay(30);		//Wait for 30uss
 	Set_Pin_Input(DHT11_PORT, DHT11_PIN);		//Set the pin as input
 }
 
 uint8_t DHT11_Check_Response(void) {
 	uint8_t Response = 0;
-	setTimer3(4);	//Wait for 40us
-	if(timer3_flag == 1) {
-
+	delay(40);		//Wait for 40us
+	if(!(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN))) {	//Check if the pin signal is low
+		delay(80);	//Wait for 80us
+		if(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN)) Response = 1;	//Check if the pin signal is high
+		else Response = -1;
 	}
+	while(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN)); //Wait for the pin to go low
+	return Response;
+}
+
+uint8_t DHT11_Read(void) {
+	uint8_t i,j;
+	for(j=0; j<8; j++) {
+		while(!(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN)));	//Wait for the pin to go high
+		delay(40);	//Wait for 40us
+		if(!(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN))) {	//If the pin is low => transmit bit "0"
+			i &= ~(1<<(7-j));	//Write 0
+		}
+		else i |= (1<<(7-j));	//If the pin is high => transmit bit "1"
+		while(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN));		//Wait for the pin to go low
+	}
+	return i;
 }
 /* USER CODE END 0 */
 
@@ -138,6 +173,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_Base_Start(&htim2);
   LiquidCrystal(GPIOD, GPIO_PIN_8, GPIO_PIN_9, GPIO_PIN_10, GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_13, GPIO_PIN_14);
   begin(16, 2);
   clear();
@@ -146,13 +182,34 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-//  setTimer1(500);
+  HAL_Delay(5000);
+  clear();
+//  char str1[30];
   while (1)
   {
-//	  if(timer1_flag == 1) {
-//		  setTimer1(100);
-//		  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-//	  }
+//	  display_Temp(Temperature);
+//	  display_Humid(Humidity);
+//	  display_Temp(Temperature);
+//	  HAL_Delay(80);
+//	  display_Humid(RH);
+
+//	  DHT11_Start();
+//	  presence = DHT11_Check_Response();
+//	  RH_byte1 = DHT11_Read();
+//	  RH_byte2 = DHT11_Read();
+//	  Temp_byte1 = DHT11_Read();
+//	  Temp_byte2 = DHT11_Read();
+//	  SUM = DHT11_Read();
+//
+//	  TEMP = Temp_byte1;
+//	  RH = RH_byte1;
+//
+//	  Temperature = (float) TEMP;
+//	  Humidity = (float) RH;
+
+	  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
+
+	  HAL_Delay(2000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -222,9 +279,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 41;
+  htim2.Init.Prescaler = 42-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 9;
+  htim2.Init.Period = 0xffff-1;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -288,9 +345,9 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-//void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-//	timerRun();
-//}
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	timerRun();
+}
 /* USER CODE END 4 */
 
 /**
