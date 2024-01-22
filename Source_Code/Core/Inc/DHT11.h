@@ -10,7 +10,6 @@
 
 #include "main.h"
 
-void DHT11_Start(void);
-uint8_t DHT11_ReadByte(void);
+
 
 #endif /* INC_DHT11_H_ */
