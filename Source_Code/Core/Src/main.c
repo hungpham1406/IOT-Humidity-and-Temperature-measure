@@ -58,39 +58,11 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void delay(uint16_t time) {
-	__HAL_TIM_SET_COUNTER(&htim2, 0);
-	while((__HAL_TIM_GET_COUNTER(&htim2)) < time);
-}
-
-uint8_t RH_byte1, RH_byte2, Temp_byte1, Temp_byte2;
-uint16_t SUM, RH, TEMP;
-
-float Temperature = 0;
-float Humidity = 0;
-uint8_t presence = 0;
-
-void Set_Pin_Output(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) {
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = GPIO_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
-}
-
-void Set_Pin_Input(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) {
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = GPIO_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
-}
-
 void display_Temp(float Temp) {
 	char str[30];
 	setCursor(0, 0);
 	print("Temp: ");
-	sprintf(str, "%.1f", Temperature);
+	sprintf(str, "%.1f", Temp);
 	print(str);
 }
 
@@ -105,40 +77,73 @@ void display_Humid(float RH) {
 /********************************DHT11 FUNCTIONS**********************************/
 #define DHT11_PORT GPIOA
 #define DHT11_PIN GPIO_PIN_2
+uint8_t RHI, RHD, TCI, TCD, SUM;
+uint32_t pMillis, cMillis;
+float tCelsius = 0;
+float tFahrenheit = 0;
+float RH = 0;
 
-void DHT11_Start(void) {
-	Set_Pin_Output(DHT11_PORT, DHT11_PIN);			//Set the pin as output
-	HAL_GPIO_WritePin(DHT11_PORT, DHT11_PIN, 0);	//Pull the pin low
-	delay(18000);	//Wait for 18ms
-	HAL_GPIO_WritePin(DHT11_PORT, DHT11_PIN, 1);
-	delay(30);		//Wait for 30uss
-	Set_Pin_Input(DHT11_PORT, DHT11_PIN);		//Set the pin as input
+void microDelay (uint16_t delay)
+{
+  __HAL_TIM_SET_COUNTER(&htim2, 0);
+  while (__HAL_TIM_GET_COUNTER(&htim2) < delay);
 }
 
-uint8_t DHT11_Check_Response(void) {
-	uint8_t Response = 0;
-	delay(40);		//Wait for 40us
-	if(!(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN))) {	//Check if the pin signal is low
-		delay(80);	//Wait for 80us
-		if(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN)) Response = 1;	//Check if the pin signal is high
-		else Response = -1;
-	}
-	while(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN)); //Wait for the pin to go low
-	return Response;
+uint8_t DHT11_Start (void)
+{
+  uint8_t Response = 0;
+  GPIO_InitTypeDef GPIO_InitStructPrivate = {0};
+  GPIO_InitStructPrivate.Pin = DHT11_PIN;
+  GPIO_InitStructPrivate.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStructPrivate.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStructPrivate.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(DHT11_PORT, &GPIO_InitStructPrivate); // set the pin as output
+  HAL_GPIO_WritePin (DHT11_PORT, DHT11_PIN, 0);   // pull the pin low
+  HAL_Delay(20);   // wait for 20ms
+  HAL_GPIO_WritePin (DHT11_PORT, DHT11_PIN, 1);   // pull the pin high
+  microDelay (30);   // wait for 30us
+  GPIO_InitStructPrivate.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStructPrivate.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(DHT11_PORT, &GPIO_InitStructPrivate); // set the pin as input
+  microDelay (40);
+  if (!(HAL_GPIO_ReadPin (DHT11_PORT, DHT11_PIN)))
+  {
+    microDelay (80);
+    if ((HAL_GPIO_ReadPin (DHT11_PORT, DHT11_PIN))) Response = 1;
+  }
+  pMillis = HAL_GetTick();
+  cMillis = HAL_GetTick();
+  while ((HAL_GPIO_ReadPin (DHT11_PORT, DHT11_PIN)) && pMillis + 2 > cMillis)
+  {
+    cMillis = HAL_GetTick();
+  }
+  return Response;
 }
 
-uint8_t DHT11_Read(void) {
-	uint8_t i,j;
-	for(j=0; j<8; j++) {
-		while(!(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN)));	//Wait for the pin to go high
-		delay(40);	//Wait for 40us
-		if(!(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN))) {	//If the pin is low => transmit bit "0"
-			i &= ~(1<<(7-j));	//Write 0
-		}
-		else i |= (1<<(7-j));	//If the pin is high => transmit bit "1"
-		while(HAL_GPIO_ReadPin(DHT11_PORT, DHT11_PIN));		//Wait for the pin to go low
-	}
-	return i;
+uint8_t DHT11_Read (void)
+{
+  uint8_t a,b;
+  for (a=0;a<8;a++)
+  {
+    pMillis = HAL_GetTick();
+    cMillis = HAL_GetTick();
+    while (!(HAL_GPIO_ReadPin (DHT11_PORT, DHT11_PIN)) && pMillis + 2 > cMillis)
+    {  // wait for the pin to go high
+      cMillis = HAL_GetTick();
+    }
+    microDelay (40);   // wait for 40 us
+    if (!(HAL_GPIO_ReadPin (DHT11_PORT, DHT11_PIN)))   // if the pin is low
+      b&= ~(1<<(7-a));
+    else
+      b|= (1<<(7-a));
+    pMillis = HAL_GetTick();
+    cMillis = HAL_GetTick();
+    while ((HAL_GPIO_ReadPin (DHT11_PORT, DHT11_PIN)) && pMillis + 2 > cMillis)
+    {  // wait for the pin to go low
+      cMillis = HAL_GetTick();
+    }
+  }
+  return b;
 }
 /* USER CODE END 0 */
 
@@ -187,28 +192,27 @@ int main(void)
 //  char str1[30];
   while (1)
   {
-	  display_Temp(Temperature);
-	  display_Humid(Humidity);
-	  display_Temp(Temperature);
+	  display_Temp(tCelsius);
 	  HAL_Delay(80);
 	  display_Humid(RH);
 
-	  DHT11_Start();
-	  presence = DHT11_Check_Response();
-	  RH_byte1 = DHT11_Read();
-	  RH_byte2 = DHT11_Read();
-	  Temp_byte1 = DHT11_Read();
-	  Temp_byte2 = DHT11_Read();
-	  SUM = DHT11_Read();
-
-	  TEMP = Temp_byte1;
-	  RH = RH_byte1;
-
-	  Temperature = (float) TEMP;
-	  Humidity = (float) RH;
-
+	  if(DHT11_Start())
+	  {
+		RHI = DHT11_Read(); // Relative humidity integral
+		RHD = DHT11_Read(); // Relative humidity decimal
+		TCI = DHT11_Read(); // Celsius integral
+		TCD = DHT11_Read(); // Celsius decimal
+		SUM = DHT11_Read(); // Check sum
+		if (RHI + RHD + TCI + TCD == SUM)
+		{
+		  // Can use RHI and TCI for any purposes if whole number only needed
+		  tCelsius = (float)TCI + (float)(TCD/10.0);
+		  tFahrenheit = tCelsius * 9/5 + 32;
+		  RH = (float)RHI + (float)(RHD/10.0);
+		  // Can use tCelsius, tFahrenheit and RH for any purposes
+		}
+	  }
 	  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
-
 	  HAL_Delay(2000);
     /* USER CODE END WHILE */
 
