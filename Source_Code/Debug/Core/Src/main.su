@@ -1,11 +1,6 @@
-main.c:61:6:display_Temp	48	static
-main.c:69:6:display_Humid	48	static
-main.c:86:6:microDelay	16	static
-main.c:92:9:DHT11_Start	32	static
-main.c:123:9:DHT11_Read	16	static
-main.c:154:5:main	32	static
-main.c:228:6:SystemClock_Config	88	static
-main.c:272:13:MX_TIM2_Init	32	static
-main.c:317:13:MX_GPIO_Init	40	static
-main.c:352:6:HAL_TIM_PeriodElapsedCallback	16	static
-main.c:361:6:Error_Handler	4	static,ignoring_inline_asm
+main.c:75:5:main	32	static
+main.c:148:6:SystemClock_Config	88	static
+main.c:192:13:MX_TIM2_Init	32	static
+main.c:237:13:MX_GPIO_Init	40	static
+main.c:272:6:HAL_TIM_PeriodElapsedCallback	16	static
+main.c:281:6:Error_Handler	4	static,ignoring_inline_asm
