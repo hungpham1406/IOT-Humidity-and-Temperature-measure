@@ -187,25 +187,25 @@ int main(void)
 //  char str1[30];
   while (1)
   {
-//	  display_Temp(Temperature);
-//	  display_Humid(Humidity);
-//	  display_Temp(Temperature);
-//	  HAL_Delay(80);
-//	  display_Humid(RH);
+	  display_Temp(Temperature);
+	  display_Humid(Humidity);
+	  display_Temp(Temperature);
+	  HAL_Delay(80);
+	  display_Humid(RH);
 
-//	  DHT11_Start();
-//	  presence = DHT11_Check_Response();
-//	  RH_byte1 = DHT11_Read();
-//	  RH_byte2 = DHT11_Read();
-//	  Temp_byte1 = DHT11_Read();
-//	  Temp_byte2 = DHT11_Read();
-//	  SUM = DHT11_Read();
-//
-//	  TEMP = Temp_byte1;
-//	  RH = RH_byte1;
-//
-//	  Temperature = (float) TEMP;
-//	  Humidity = (float) RH;
+	  DHT11_Start();
+	  presence = DHT11_Check_Response();
+	  RH_byte1 = DHT11_Read();
+	  RH_byte2 = DHT11_Read();
+	  Temp_byte1 = DHT11_Read();
+	  Temp_byte2 = DHT11_Read();
+	  SUM = DHT11_Read();
+
+	  TEMP = Temp_byte1;
+	  RH = RH_byte1;
+
+	  Temperature = (float) TEMP;
+	  Humidity = (float) RH;
 
 	  HAL_GPIO_TogglePin(LED_RED_GPIO_Port, LED_RED_Pin);
 
