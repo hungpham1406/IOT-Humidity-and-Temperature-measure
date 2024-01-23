@@ -14,6 +14,8 @@
 #define DHT11_PORT GPIOA
 #define DHT11_PIN GPIO_PIN_2
 
+TIM_HandleTypeDef htim2;
+
 uint32_t pMillis, cMillis;
 
 void microDelay (uint16_t delay);
